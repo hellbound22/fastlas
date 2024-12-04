@@ -1,3 +1,4 @@
+
 mod las;
 mod utils;
 
@@ -12,7 +13,7 @@ fn main() -> std::io::Result<()> {
 
     let las = LasFile::new_from_file(file);
     
-    dbg!(las);
+    //dbg!(&las.cloud.v[0]);
 
     Ok(())
 }

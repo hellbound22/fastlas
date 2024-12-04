@@ -3,5 +3,9 @@ name = "las2txt-rs"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+debug = 1
+
 [dependencies]
 bit-set = "0.8.0"
+memmap2 = "0.9.5"

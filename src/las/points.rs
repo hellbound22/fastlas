@@ -1,8 +1,9 @@
 use std::{fs::File, io::{Read, Seek}};
 
 use bit_set::BitSet;
+use memmap2::Mmap;
 
-use crate::utils::read_bytes;
+use crate::utils::{read_bytes, read_mmap_bytes};
 
 use super::header::PublicHeaderBlock;
 
@@ -40,25 +41,27 @@ struct Addons {
 
 #[derive(Debug, Default)]
 pub struct PointCloud {
-    v: Vec<Point>,
+    pub v: Vec<Point>,
 }
 
 impl PointCloud {
-    pub fn parse_number<T: Read + Seek>(file: &mut T, header: &PublicHeaderBlock, number: u64) -> Self {
-        let mut acc = header.offset_point;
-        let format = header.point_format;
+    pub fn parse_all(file: &Mmap, header: &PublicHeaderBlock) -> Self {
+        Self::parse_number(file, header, header.point_records)
+    }
+
+    pub fn parse_number(file: &Mmap, header: &PublicHeaderBlock, number: u64) -> Self {
+        let mut acc = header.offset_point as u64;
         let lenght = header.point_lenght;
 
-
         let mut v = Vec::new();
+
         for x in 0..number {
-            let p = Point::new_from_offset(file, acc);
-            acc += lenght as u32;
+            let p = Point::new_from_buf(file, &mut acc);
 
             v.push(p);
             
-            if x % 100_000 == 0 {
-                dbg!(x);
+            if x % 1_000_000 == 0 && x != 0{
+                dbg!(x as f64 / number as f64);
             }
         }
         
@@ -100,20 +103,19 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn new_from_offset<T: Read + Seek>(file: &mut T, offset: u32) -> Self {
+    pub fn new_from_buf(file: &Mmap, acc: &mut u64) -> Self {
         let mut def = PointRaw::default();
 
-        let mut acc = offset as u64;
-
-        read_bytes(&mut def.x, file, &mut acc);
-        read_bytes(&mut def.y, file, &mut acc);
-        read_bytes(&mut def.z, file, &mut acc);
-        read_bytes(&mut def.intensity, file, &mut acc);
-        read_bytes(&mut def.returns_vars, file, &mut acc);
-        read_bytes(&mut def.classification, file, &mut acc);
-        read_bytes(&mut def.scan_angle_rank, file, &mut acc);
-        read_bytes(&mut def.user_data, file, &mut acc);
-        read_bytes(&mut def.point_source_id, file, &mut acc);
+        read_mmap_bytes(&mut def.x, file, acc);
+        read_mmap_bytes(&mut def.y, file, acc);
+        read_mmap_bytes(&mut def.z, file, acc);
+        
+        read_mmap_bytes(&mut def.intensity, file, acc);
+        read_mmap_bytes(&mut def.returns_vars, file, acc);
+        read_mmap_bytes(&mut def.classification, file, acc);
+        read_mmap_bytes(&mut def.scan_angle_rank, file, acc);
+        read_mmap_bytes(&mut def.user_data, file, acc);
+        read_mmap_bytes(&mut def.point_source_id, file, acc);
 
         let x = i32::from_le_bytes(def.x);
         let y = i32::from_le_bytes(def.y);
@@ -123,9 +125,11 @@ impl Point {
 
         let return_number = BitSet::from_bytes(&[((returns_vars & 0b0000_0111) >> 3) as u8]);
         let number_of_returns = BitSet::from_bytes(&[((returns_vars & 0b0011_1000) >> 3) as u8]);
+        //let return_number = Default::default();
+        //let number_of_returns = Default::default();
+
         let scan_direction_flag = (returns_vars & 0b0100_0000) != 0;
         let edge_of_flight_line = (returns_vars & 0b0100_0000) != 0;
-        // Return vars
 
         let intensity = i16::from_le_bytes(def.intensity);
         let classification = u8::from_le_bytes(def.classification);
@@ -133,7 +137,13 @@ impl Point {
         let user_data = u8::from_le_bytes(def.user_data);
         let point_source_id = u8::from_le_bytes(def.point_source_id);
 
-        let addons = Addons::default();
+        let mut addons = Addons::default();
+
+        // TODO: check for point format
+        let mut raw_gps_time = [0u8; 8];
+        read_mmap_bytes(&mut raw_gps_time, file, acc);
+        let gps_time = GpsTime(i64::from_le_bytes(raw_gps_time));
+        addons.gps_time = Some(gps_time);
 
         Self {
             x, y, z,

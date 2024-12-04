@@ -55,7 +55,14 @@ impl PublicHeaderBlock {
         let point_format = u8::from_le_bytes(raw.point_data_record_format);
         let point_lenght = u16::from_le_bytes(raw.point_data_record_lenght);
 
-        let point_records = u64::from_le_bytes(raw.nmr_point_records);
+
+        let point_records = if version == "1.4" {
+            // Interpret all 8 bytes as u64
+            u64::from_le_bytes(raw.nmr_point_records)
+        } else {
+            // Interpret only the first 4 bytes as u32
+            u32::from_le_bytes(raw.legacy_nmr_point_records) as u64
+        };
 
         Self {
             file_signature,
@@ -168,7 +175,9 @@ impl PublicHeaderBlockRaw {
         read_bytes(&mut header_buf.start_waveform_data_record, file, &mut acc);
         read_bytes(&mut header_buf.start_first_ext_var_record, file, &mut acc);
         read_bytes(&mut header_buf.nmr_ext_var_record, file, &mut acc);
+
         read_bytes(&mut header_buf.nmr_point_records, file, &mut acc);
+
         read_bytes(&mut header_buf.nmr_points_return.0, file, &mut acc);
 
         header_buf
