@@ -13,8 +13,10 @@ fn main() -> std::io::Result<()> {
 
     let las = LasFile::new_from_file(file);
     
-    //dbg!(&las.cloud.v[0]);
+    //dbg!(&las);
 
+    let mut new = File::create("../rs_parsed.txt")?;
+    las.write_points_to_file(&mut new);
     Ok(())
 }
 

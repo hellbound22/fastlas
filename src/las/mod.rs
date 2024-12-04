@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::BufReader;
+use std::io::BufWriter;
 use std::io::Read;
+use std::io::Write;
 
 
 use memmap2::Mmap;
@@ -26,17 +28,19 @@ impl LasFile {
         let raw_head = PublicHeaderBlockRaw::new_from_reader(&mut reader);
         let header = PublicHeaderBlock::new_from_raw(&raw_head);
         
-        dbg!(&header);
-
-        //let mut buf = Vec::new();
-        //reader.read_to_end(&mut buf).unwrap();
-        //
-
-        //let cloud = PointCloud::parse_number(&mmap, &header, 10);
+        //let cloud = PointCloud::parse_number(&mmap, &header, 3);
         let cloud = PointCloud::parse_all(&mmap, &header);
 
 
         Self { header, cloud }
+    }
+
+    pub fn write_points_to_file(&self, file: &mut File) {
+        let mut buf = BufWriter::new(file);
+        for point in &self.cloud.v {
+            buf.write(point.format_to_txt().as_bytes()).unwrap();
+        }
+        buf.flush().unwrap();
     }
 }
 

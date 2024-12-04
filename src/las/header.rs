@@ -17,6 +17,10 @@ pub struct PublicHeaderBlock {
     pub point_format: u8,
     pub point_lenght: u16,
     pub point_records: u64,
+    // TODO Number of Points by Return
+    pub x_scale_factor: f64,
+    pub y_scale_factor: f64,
+    pub z_scale_factor: f64,
 }
 
 impl PublicHeaderBlock {
@@ -55,14 +59,15 @@ impl PublicHeaderBlock {
         let point_format = u8::from_le_bytes(raw.point_data_record_format);
         let point_lenght = u16::from_le_bytes(raw.point_data_record_lenght);
 
-
         let point_records = if version == "1.4" {
-            // Interpret all 8 bytes as u64
             u64::from_le_bytes(raw.nmr_point_records)
         } else {
-            // Interpret only the first 4 bytes as u32
             u32::from_le_bytes(raw.legacy_nmr_point_records) as u64
         };
+
+        let x_scale_factor = f64::from_le_bytes(raw.x_scale_factor);
+        let y_scale_factor = f64::from_le_bytes(raw.y_scale_factor);
+        let z_scale_factor = f64::from_le_bytes(raw.z_scale_factor);
 
         Self {
             file_signature,
@@ -78,6 +83,9 @@ impl PublicHeaderBlock {
             point_format,
             point_lenght,
             point_records,
+            x_scale_factor,
+            y_scale_factor,
+            z_scale_factor,
         }
     }
 }

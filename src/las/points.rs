@@ -56,7 +56,7 @@ impl PointCloud {
         let mut v = Vec::new();
 
         for x in 0..number {
-            let p = Point::new_from_buf(file, &mut acc);
+            let p = Point::new_from_buf(file, &mut acc, header);
 
             v.push(p);
             
@@ -86,9 +86,9 @@ pub struct PointRaw {
 
 #[derive(Debug, Default)]
 pub struct Point {
-    x: i32,
-    y: i32,
-    z: i32,
+    x: f64,
+    y: f64,
+    z: f64,
     // If this is 0 convert to None
     intensity: i16,
     return_number: BitSet,
@@ -103,7 +103,11 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn new_from_buf(file: &Mmap, acc: &mut u64) -> Self {
+    pub fn format_to_txt(&self) -> String {
+        format!("{} {} {}\n", self.x, self.y, self.z)
+    }
+
+    pub fn new_from_buf(file: &Mmap, acc: &mut u64, header: &PublicHeaderBlock) -> Self {
         let mut def = PointRaw::default();
 
         read_mmap_bytes(&mut def.x, file, acc);
@@ -117,9 +121,9 @@ impl Point {
         read_mmap_bytes(&mut def.user_data, file, acc);
         read_mmap_bytes(&mut def.point_source_id, file, acc);
 
-        let x = i32::from_le_bytes(def.x);
-        let y = i32::from_le_bytes(def.y);
-        let z = i32::from_le_bytes(def.z);
+        let x = i32::from_le_bytes(def.x) as f64 * header.x_scale_factor;
+        let y = i32::from_le_bytes(def.y) as f64 * header.y_scale_factor;
+        let z = i32::from_le_bytes(def.z) as f64 * header.x_scale_factor;
 
         let returns_vars = u16::from_le_bytes(def.returns_vars);
 
@@ -139,11 +143,15 @@ impl Point {
 
         let mut addons = Addons::default();
 
-        // TODO: check for point format
-        let mut raw_gps_time = [0u8; 8];
-        read_mmap_bytes(&mut raw_gps_time, file, acc);
-        let gps_time = GpsTime(i64::from_le_bytes(raw_gps_time));
-        addons.gps_time = Some(gps_time);
+        match header.point_format {
+            1 => {
+                let mut raw_gps_time = [0u8; 8];
+                read_mmap_bytes(&mut raw_gps_time, file, acc);
+                let gps_time = GpsTime(i64::from_le_bytes(raw_gps_time));
+                addons.gps_time = Some(gps_time);
+            }
+            _ => unimplemented!()
+        }
 
         Self {
             x, y, z,
