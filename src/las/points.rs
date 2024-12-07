@@ -59,10 +59,6 @@ impl PointCloud {
             let p = Point::new_from_buf(file, &mut acc, header);
 
             v.push(p);
-            
-            if x % 1_000_000 == 0 && x != 0{
-                dbg!(x as f64 / number as f64);
-            }
         }
         
         Self {v}

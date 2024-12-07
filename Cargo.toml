@@ -1,5 +1,5 @@
 [package]
-name = "las2txt-rs"
+name = "fastlas"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,4 +8,5 @@ debug = 1
 
 [dependencies]
 bit-set = "0.8.0"
+clap = { version = "4.5.23", features = ["derive"] }
 memmap2 = "0.9.5"

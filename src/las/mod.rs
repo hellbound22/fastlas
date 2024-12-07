@@ -40,7 +40,6 @@ impl LasFile {
         for point in &self.cloud.v {
             buf.write(point.format_to_txt().as_bytes()).unwrap();
         }
-        buf.flush().unwrap();
     }
 }
 
