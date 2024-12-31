@@ -100,7 +100,11 @@ pub struct Point {
 
 impl Point {
     pub fn format_to_txt(&self) -> String {
-        format!("{} {} {}\n", self.x, self.y, self.z)
+        format!("{} {} {}\n", 
+                format!("{:.2}", self.x).trim_end_matches('0').trim_end_matches('.'), 
+                format!("{:.2}", self.y).trim_end_matches('0').trim_end_matches('.'), 
+                format!("{:.2}", self.z).trim_end_matches('0').trim_end_matches('.'), 
+                )
     }
 
     pub fn new_from_buf(file: &Mmap, acc: &mut u64, header: &PublicHeaderBlock) -> Self {
@@ -125,8 +129,6 @@ impl Point {
 
         let return_number = BitSet::from_bytes(&[((returns_vars & 0b0000_0111) >> 3) as u8]);
         let number_of_returns = BitSet::from_bytes(&[((returns_vars & 0b0011_1000) >> 3) as u8]);
-        //let return_number = Default::default();
-        //let number_of_returns = Default::default();
 
         let scan_direction_flag = (returns_vars & 0b0100_0000) != 0;
         let edge_of_flight_line = (returns_vars & 0b0100_0000) != 0;
