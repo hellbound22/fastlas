@@ -1,11 +1,11 @@
 use clap::{Parser, Subcommand};
 
-use std::{fs::File, path::{Path, PathBuf}};
+use std::{fs::File, path::PathBuf};
 
 mod las;
 mod utils;
 
-use las::{header::{PublicHeaderBlock, PublicHeaderBlockRaw}, LasFile};
+use las::LasFile;
 
 
 #[derive(Subcommand, Clone)]
@@ -31,9 +31,7 @@ fn main() -> std::io::Result<()> {
         panic!("input file must be specified");
     };
 
-    let in_file = File::open(&input)?;
-
-    let mut las = LasFile::new_from_file(in_file);
+    let mut las = LasFile::new_from_path(&input);
 
     match cli.command {
         Some(Command::Header) => {
@@ -54,8 +52,6 @@ fn main() -> std::io::Result<()> {
             las.write_points_to_file(&mut out_file);
         }
     }
-
-
 
     Ok(())
 }

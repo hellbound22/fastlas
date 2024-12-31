@@ -20,3 +20,8 @@ User Mode (s) 6.58
 Kernel Mode (s) 0.15
 CPU: 97%
 ```
+
+
+### TODO
+- [ ] File specificaion versions support
+- [ ] multithread

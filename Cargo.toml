@@ -9,4 +9,5 @@ debug = 1
 [dependencies]
 bit-set = "0.8.0"
 clap = { version = "4.5.23", features = ["derive"] }
+file-guard = "0.2.0"
 memmap2 = "0.9.5"
